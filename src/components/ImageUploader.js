@@ -27,43 +27,56 @@ const ImageUploader = ({ onImageUpload, folder, disabled = false }) => {
     setError(null);
     
     try {
-      // Simulera en uppladdning
+      // Visuell feedback av uppladdningsprogress
       setProgress(10);
-      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Förbered FormData för att skicka filen
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      // Lägg till mapp-information om tillgängligt
+      if (folder) {
+        formData.append('folder', folder);
+      }
+      
       setProgress(30);
-      await new Promise(resolve => setTimeout(resolve, 300));
-      setProgress(60);
-      await new Promise(resolve => setTimeout(resolve, 300));
-      setProgress(90);
-
-      // Läs filen lokalt som data URL
-      const reader = new FileReader();
-      reader.onload = () => {
-        const timestamp = new Date().getTime();
-        
-        // Skicka lokal bild info till callback
-        onImageUpload({
-          url: reader.result,  // Detta är en data URL
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          timestamp: timestamp
-        });
-        
-        setProgress(100);
-        setUploading(false);
-      };
       
-      reader.onerror = () => {
-        setError('Kunde inte läsa filen');
-        setUploading(false);
-      };
+      // Skicka filen till vår server-endpoint
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
       
-      reader.readAsDataURL(file);
+      setProgress(70);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Uppladdning misslyckades');
+      }
+      
+      // Hämta URL:en och annan info från Firebase Storage
+      const data = await response.json();
+      
+      // Skicka bildinfo till föräldrakomponenten
+      onImageUpload({
+        url: data.url,  // Detta är nu en Firebase Storage URL
+        name: data.name,
+        type: data.type,
+        size: data.size,
+        timestamp: data.timestamp
+      });
+      
+      setProgress(100);
+      
+      // Kort fördröjning innan vi återställer uppladdningsstatusen
+      setTimeout(() => {
+        setUploading(false);
+        setProgress(0);
+      }, 500);
       
     } catch (err) {
-      console.error('Error handling file upload:', err);
-      setError('Ett fel uppstod. Försök igen senare.');
+      console.error('Error uploading image:', err);
+      setError(`Ett fel uppstod vid uppladdningen: ${err.message}`);
       setUploading(false);
     }
   };

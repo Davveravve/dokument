@@ -3,10 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { doc, getDoc, updateDoc, deleteDoc, serverTimestamp, collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../services/firebase';
+import { useConfirmation } from '../components/ConfirmationProvider';
 
 const CustomerDetail = () => {
   const { customerId } = useParams();
   const navigate = useNavigate();
+  const confirmation = useConfirmation();
   const [customer, setCustomer] = useState(null);
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -101,29 +103,32 @@ const CustomerDetail = () => {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Är du säker på att du vill ta bort denna kund? Detta kommer även ta bort alla adresser och anläggningar.')) {
-      return;
-    }
-    
-    setLoading(true);
-    
-    try {
-      // Ta bort kunden
-      await deleteDoc(doc(db, 'customers', customerId));
-      
-      // Här skulle du idealt ha en Cloud Function som tar bort relaterade adresser och anläggningar
-      // men för enklare implementationer kan du manuellt ta bort relaterade adresser
-      for (const address of addresses) {
-        await deleteDoc(doc(db, 'addresses', address.id));
-        // Ta även bort relaterade anläggningar här om nödvändigt
+    // Använder vår nya confirmation istället för window.confirm
+    confirmation.confirm({
+      title: 'Ta bort kund',
+      message: 'Är du säker på att du vill ta bort denna kund? Detta kommer även ta bort alla adresser och anläggningar.',
+      onConfirm: async () => {
+        setLoading(true);
+        
+        try {
+          // Ta bort kunden
+          await deleteDoc(doc(db, 'customers', customerId));
+          
+          // Här skulle du idealt ha en Cloud Function som tar bort relaterade adresser och anläggningar
+          // men för enklare implementationer kan du manuellt ta bort relaterade adresser
+          for (const address of addresses) {
+            await deleteDoc(doc(db, 'addresses', address.id));
+            // Ta även bort relaterade anläggningar här om nödvändigt
+          }
+          
+          navigate('/customers');
+        } catch (err) {
+          console.error('Error deleting customer:', err);
+          setError('Kunde inte ta bort kund');
+          setLoading(false);
+        }
       }
-      
-      navigate('/customers');
-    } catch (err) {
-      console.error('Error deleting customer:', err);
-      setError('Kunde inte ta bort kund');
-      setLoading(false);
-    }
+    });
   };
 
   if (loading) return <div>Laddar...</div>;

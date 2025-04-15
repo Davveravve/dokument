@@ -3,10 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { doc, getDoc, updateDoc, deleteDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../services/firebase';
+import { useConfirmation } from '../components/ConfirmationProvider';
 
 const InstallationDetail = () => {
   const { customerId, addressId, installationId } = useParams();
   const navigate = useNavigate();
+  const confirmation = useConfirmation();
   const [installation, setInstallation] = useState(null);
   const [address, setAddress] = useState(null);
   const [customer, setCustomer] = useState(null);
@@ -98,25 +100,30 @@ const InstallationDetail = () => {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Är du säker på att du vill ta bort denna anläggning?')) {
-      return;
-    }
-    
-    setLoading(true);
-    
-    try {
-      // Ta bort anläggningen
-      await deleteDoc(doc(db, 'installations', installationId));
-      
-      // Idealt skulle du också ta bort relaterade besiktningar här eller använda Cloud Functions
-      // för att hantera detta automatiskt.
-      
-      navigate(`/customers/${customerId}/addresses/${addressId}`);
-    } catch (err) {
-      console.error('Error deleting installation:', err);
-      setError('Kunde inte ta bort anläggning');
-      setLoading(false);
-    }
+    confirmation.confirm({
+      title: 'Ta bort anläggning',
+      message: 'Är du säker på att du vill ta bort denna anläggning? Detta kommer ta bort alla tillhörande kontroller.',
+      onConfirm: async () => {
+        setLoading(true);
+        
+        try {
+          // Ta bort anläggningen
+          await deleteDoc(doc(db, 'installations', installationId));
+          
+          // Idealt skulle du också ta bort relaterade besiktningar här eller använda Cloud Functions
+          // för att hantera detta automatiskt.
+          for (const inspection of inspections) {
+            await deleteDoc(doc(db, 'inspections', inspection.id));
+          }
+          
+          navigate(`/customers/${customerId}/addresses/${addressId}`);
+        } catch (err) {
+          console.error('Error deleting installation:', err);
+          setError('Kunde inte ta bort anläggning');
+          setLoading(false);
+        }
+      }
+    });
   };
 
   if (loading) return <div>Laddar...</div>;

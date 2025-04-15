@@ -7,6 +7,7 @@ import ImageUploader from '../components/ImageUploader';
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import { v4 as uuidv4 } from 'uuid';
+import { useConfirmation } from '../components/ConfirmationProvider';
 
 const InspectionDetail = () => {
   const { customerId, addressId, installationId, inspectionId } = useParams();
@@ -28,6 +29,7 @@ const InspectionDetail = () => {
   const [newItemLabel, setNewItemLabel] = useState('');
   const [newItemType, setNewItemType] = useState('yesno');
   const [activeSectionForNewItem, setActiveSectionForNewItem] = useState(null);
+  const confirmation = useConfirmation();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -125,20 +127,58 @@ const InspectionDetail = () => {
   };
 
   const handleDeleteImage = async (sectionIndex, itemIndex, imageIndex) => {
-    if (!window.confirm('Är du säker på att du vill ta bort denna bild?')) {
-      return;
+    confirmation.confirm({
+      title: 'Ta bort bild',
+      message: 'Är du säker på att du vill ta bort denna bild?',
+      onConfirm: async () => {
+        const updatedInspection = { ...inspection };
+        const imageToDelete = updatedInspection.sections[sectionIndex].items[itemIndex].images[imageIndex];
+        
+        try {
+          // Om bilden lagras i Firebase Storage, försök ta bort den
+          if (imageToDelete.url && imageToDelete.url.includes('storage.googleapis.com')) {
+            // Extrahera filvägen från URL:en
+            const filePath = imageToDelete.path || extractPathFromUrl(imageToDelete.url);
+            
+            if (filePath) {
+              console.log('Tar bort fil från Firebase Storage:', filePath);
+              // Här kan du implementera ett API-anrop för att ta bort filen från Firebase Storage
+              // För nu, fortsätter vi bara och tar bort referensen
+            }
+          }
+          
+          // Ta bort bildreferensen från inspektionen
+          updatedInspection.sections[sectionIndex].items[itemIndex].images.splice(imageIndex, 1);
+          setInspection(updatedInspection);
+          
+          // Stäng eventuellt öppen bildmodal
+          setActiveImageModal(null);
+          
+          // Spara ändringarna i Firestore
+          handleSave();
+        } catch (err) {
+          console.error('Error deleting image:', err);
+          setError('Kunde inte ta bort bilden');
+        }
+      }
+    });
+  };
+  
+  
+  // Hjälpfunktion för att extrahera filvägen från URL:en
+  const extractPathFromUrl = (url) => {
+    // URL format: https://storage.googleapis.com/soeldokumentation.appspot.com/folder/filename
+    try {
+      const bucketName = 'soeldokumentation.appspot.com';
+      const parts = url.split(bucketName + '/');
+      if (parts.length > 1) {
+        return parts[1];
+      }
+      return null;
+    } catch (err) {
+      console.error('Error extracting path from URL:', err);
+      return null;
     }
-    
-    const updatedInspection = { ...inspection };
-    updatedInspection.sections[sectionIndex].items[itemIndex].images.splice(imageIndex, 1);
-    
-    setInspection(updatedInspection);
-    
-    // Stäng eventuellt öppen bildmodal
-    setActiveImageModal(null);
-    
-    // Spara ändringarna i Firestore
-    handleSave();
   };
 
   const handleSave = async () => {
@@ -208,20 +248,22 @@ const InspectionDetail = () => {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Är du säker på att du vill ta bort denna besiktning?')) {
-      return;
-    }
-    
-    setSaving(true);
-    
-    try {
-      await deleteDoc(doc(db, 'inspections', inspectionId));
-      navigate(`/customers/${customerId}/addresses/${addressId}/installations/${installationId}`);
-    } catch (err) {
-      console.error('Error deleting inspection:', err);
-      setError('Kunde inte ta bort besiktningen');
-      setSaving(false);
-    }
+    confirmation.confirm({
+      title: 'Ta bort kontroll',
+      message: 'Är du säker på att du vill ta bort denna kontroll?',
+      onConfirm: async () => {
+        setSaving(true);
+        
+        try {
+          await deleteDoc(doc(db, 'inspections', inspectionId));
+          navigate(`/customers/${customerId}/addresses/${addressId}/installations/${installationId}`);
+        } catch (err) {
+          console.error('Error deleting inspection:', err);
+          setError('Kunde inte ta bort kontrollen');
+          setSaving(false);
+        }
+      }
+    });
   };
 
   const toggleEditingQuestions = () => {
@@ -266,13 +308,15 @@ const InspectionDetail = () => {
   };
 
   const removeItem = (sectionIndex, itemIndex) => {
-    if (!window.confirm('Är du säker på att du vill ta bort denna fråga?')) {
-      return;
-    }
-    
-    const updatedInspection = { ...inspection };
-    updatedInspection.sections[sectionIndex].items.splice(itemIndex, 1);
-    setInspection(updatedInspection);
+    confirmation.confirm({
+      title: 'Ta bort fråga',
+      message: 'Är du säker på att du vill ta bort denna fråga?',
+      onConfirm: () => {
+        const updatedInspection = { ...inspection };
+        updatedInspection.sections[sectionIndex].items.splice(itemIndex, 1);
+        setInspection(updatedInspection);
+      }
+    });
   };
 
   const handleEditItem = (sectionIndex, itemIndex, newLabel) => {

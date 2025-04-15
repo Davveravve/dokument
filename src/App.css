@@ -1303,3 +1303,52 @@ input[type="radio"]:focus {
 html {
   scroll-behavior: smooth;
 }
+/* Confirmation modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.confirmation-modal {
+  background-color: white;
+  border-radius: 24px;
+  width: 90%;
+  max-width: 450px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 30px rgba(98, 0, 234, 0.2);
+}
+
+.confirmation-modal h3 {
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+}
+
+.confirmation-modal p {
+  margin-bottom: 1.5rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+/* För små mobiler */
+@media (max-width: 480px) {
+  .modal-actions {
+    flex-direction: column-reverse;
+  }
+  
+  .modal-actions button {
+    width: 100%;
+  }
+}

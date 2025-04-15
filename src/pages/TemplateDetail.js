@@ -3,10 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
+import { useConfirmation } from '../components/ConfirmationProvider';
 
 const TemplateDetail = () => {
   const { templateId } = useParams();
   const navigate = useNavigate();
+  const confirmation = useConfirmation();
   const [template, setTemplate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -38,20 +40,22 @@ const TemplateDetail = () => {
   }, [templateId]);
 
   const handleDelete = async () => {
-    if (!window.confirm('Är du säker på att du vill ta bort denna mall?')) {
-      return;
-    }
-    
-    setLoading(true);
-    
-    try {
-      await deleteDoc(doc(db, 'checklistTemplates', templateId));
-      navigate('/templates');
-    } catch (err) {
-      console.error('Error deleting template:', err);
-      setError('Kunde inte ta bort mall');
-      setLoading(false);
-    }
+    confirmation.confirm({
+      title: 'Ta bort mall',
+      message: 'Är du säker på att du vill ta bort denna mall? Detta kommer inte påverka redan skapade kontroller som använder mallen.',
+      onConfirm: async () => {
+        setLoading(true);
+        
+        try {
+          await deleteDoc(doc(db, 'checklistTemplates', templateId));
+          navigate('/templates');
+        } catch (err) {
+          console.error('Error deleting template:', err);
+          setError('Kunde inte ta bort mall');
+          setLoading(false);
+        }
+      }
+    });
   };
 
   if (loading) return <div>Laddar...</div>;

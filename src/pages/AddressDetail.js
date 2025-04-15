@@ -3,10 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { doc, getDoc, updateDoc, deleteDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../services/firebase';
+import { useConfirmation } from '../components/ConfirmationProvider';
 
 const AddressDetail = () => {
   const { customerId, addressId } = useParams();
   const navigate = useNavigate();
+  const confirmation = useConfirmation();
   const [address, setAddress] = useState(null);
   const [customer, setCustomer] = useState(null);
   const [installations, setInstallations] = useState([]);
@@ -109,29 +111,31 @@ const AddressDetail = () => {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Är du säker på att du vill ta bort denna adress? Detta kommer även ta bort alla anläggningar.')) {
-      return;
-    }
-    
-    setLoading(true);
-    
-    try {
-      // Ta bort adressen
-      await deleteDoc(doc(db, 'addresses', addressId));
-      
-      // Här skulle du idealt ha en Cloud Function som tar bort relaterade anläggningar
-      // men för enklare implementationer kan du manuellt ta bort relaterade anläggningar
-      for (const installation of installations) {
-        await deleteDoc(doc(db, 'installations', installation.id));
-        // Ta även bort relaterade besiktningar här om nödvändigt
+    confirmation.confirm({
+      title: 'Ta bort adress',
+      message: 'Är du säker på att du vill ta bort denna adress? Detta kommer även ta bort alla anläggningar.',
+      onConfirm: async () => {
+        setLoading(true);
+        
+        try {
+          // Ta bort adressen
+          await deleteDoc(doc(db, 'addresses', addressId));
+          
+          // Här skulle du idealt ha en Cloud Function som tar bort relaterade anläggningar
+          // men för enklare implementationer kan du manuellt ta bort relaterade anläggningar
+          for (const installation of installations) {
+            await deleteDoc(doc(db, 'installations', installation.id));
+            // Ta även bort relaterade besiktningar här om nödvändigt
+          }
+          
+          navigate(`/customers/${customerId}`);
+        } catch (err) {
+          console.error('Error deleting address:', err);
+          setError('Kunde inte ta bort adress');
+          setLoading(false);
+        }
       }
-      
-      navigate(`/customers/${customerId}`);
-    } catch (err) {
-      console.error('Error deleting address:', err);
-      setError('Kunde inte ta bort adress');
-      setLoading(false);
-    }
+    });
   };
 
   if (loading) return <div>Laddar...</div>;

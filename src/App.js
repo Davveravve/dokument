@@ -1,6 +1,7 @@
 // src/App.js
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ConfirmationProvider } from './components/ConfirmationProvider';
 import MainLayout from './components/layout/MainLayout';
 import Dashboard from './pages/Dashboard';
 import CustomerList from './pages/CustomerList';
@@ -21,29 +22,31 @@ import './App.css';
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<MainLayout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="customers" element={<CustomerList />} />
-          <Route path="customers/new" element={<CustomerForm />} />
-          <Route path="customers/:customerId" element={<CustomerDetail />} />
-          <Route path="customers/:customerId/addresses" element={<AddressList />} />
-          <Route path="customers/:customerId/addresses/:addressId" element={<AddressDetail />} />
-          <Route path="customers/:customerId/addresses/:addressId/installations" element={<InstallationList />} />
-          <Route path="customers/:customerId/addresses/:addressId/installations/:installationId" element={<InstallationDetail />} />
-          <Route path="customers/:customerId/addresses/new" element={<AddressForm />} />
-          <Route path="customers/:customerId/addresses/:addressId/installations/new" element={<InstallationForm />} />
-          <Route path="templates" element={<TemplateList />} />
-          <Route path="templates/new" element={<TemplateBuilder />} />
-          <Route path="templates/:templateId" element={<TemplateDetail />} />
-          <Route path="templates/edit/:templateId" element={<TemplateBuilder />} />
-          <Route path="customers/:customerId/addresses/:addressId/installations/:installationId/inspections/new" element={<InspectionForm />} />
-          <Route path="customers/:customerId/addresses/:addressId/installations/:installationId/inspections/:inspectionId" element={<InspectionDetail />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <ConfirmationProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<MainLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="customers" element={<CustomerList />} />
+            <Route path="customers/new" element={<CustomerForm />} />
+            <Route path="customers/:customerId" element={<CustomerDetail />} />
+            <Route path="customers/:customerId/addresses" element={<AddressList />} />
+            <Route path="customers/:customerId/addresses/:addressId" element={<AddressDetail />} />
+            <Route path="customers/:customerId/addresses/:addressId/installations" element={<InstallationList />} />
+            <Route path="customers/:customerId/addresses/:addressId/installations/:installationId" element={<InstallationDetail />} />
+            <Route path="customers/:customerId/addresses/new" element={<AddressForm />} />
+            <Route path="customers/:customerId/addresses/:addressId/installations/new" element={<InstallationForm />} />
+            <Route path="templates" element={<TemplateList />} />
+            <Route path="templates/new" element={<TemplateBuilder />} />
+            <Route path="templates/:templateId" element={<TemplateDetail />} />
+            <Route path="templates/edit/:templateId" element={<TemplateBuilder />} />
+            <Route path="customers/:customerId/addresses/:addressId/installations/:installationId/inspections/new" element={<InspectionForm />} />
+            <Route path="customers/:customerId/addresses/:addressId/installations/:installationId/inspections/:inspectionId" element={<InspectionDetail />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </ConfirmationProvider>
   );
 }
 
