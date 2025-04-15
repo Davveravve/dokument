@@ -21,3 +21,6 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+echo "soeldokumentation-firebase-adminsdk-fbsvc-e9aac224ce.json" >> .gitignore
+echo "*.json.json" >> .gitignore
