@@ -1,0 +1,10 @@
+-Bilder ska hamna på sin plats där man laddar upp dem, just nu hamnar de i en klump längst upp på första frågan även om man lagt in dem i en anna fråga.
+
+-Skapa en kontroll med två mallar. Så blandar den och gör olika sektioner med de nya mallarna ihop.
+
+- Kunna namnsätta kontroller
+
+-Kunna redigera en kontroll även om den är slutförd.
+
+- Fixa login skärm
+
